@@ -51,7 +51,6 @@ async function fetchPopularGames(
 
   return getJson<PopularGamesResponse>('games/popular-with-pick', {
     date: requestDate,
-    tomorrowFlag: tomorrow,
   });
 }
 

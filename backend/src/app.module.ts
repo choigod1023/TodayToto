@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from './config/config.module';
 import { GamesModule } from './games/games.module';
@@ -12,6 +13,7 @@ import { AppService } from './app.service';
     MongooseModule.forRoot(
       process.env.MONGODB_URI || 'mongodb://localhost:27017/sportstoto',
     ),
+    ScheduleModule.forRoot(),
     GamesModule,
     AnalysisModule,
   ],

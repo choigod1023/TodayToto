@@ -30,32 +30,48 @@ export class GamesController {
   ) {}
 
   @Get('popular')
-  getPopularGames(
-    @Query('date') date: string,
-    @Query('tomorrowFlag') tomorrowFlag?: string,
-  ) {
-    const flag = tomorrowFlag === 'true';
-    return this.gamesService.fetchPopularGames(date, flag);
+  getPopularGames(@Query('date') date?: string) {
+    const { requestedDate, isFuture } = this.resolveDate(date);
+    return this.gamesService.fetchPopularGames(requestedDate, isFuture);
   }
 
   @Get('popular-with-pick')
-  async getPopularWithPick(
-    @Query('date') date: string,
-    @Query('tomorrowFlag') tomorrowFlag?: string,
-  ) {
-    const flag = tomorrowFlag === 'true';
-    const popular = await this.gamesService.fetchPopularGames(date, flag);
+  async getPopularWithPick(@Query('date') date?: string) {
+    const { requestedDate, isFuture } = this.resolveDate(date);
+    const popular = await this.gamesService.fetchPopularGames(
+      requestedDate,
+      isFuture,
+    );
 
-    console.log(
-      `[GamesController] popular-with-pick 분석 시작 (총 ${popular.games.length}경기)`,
+    const isBeforeNoonKst = (startTime?: string): boolean => {
+      if (!startTime) return false;
+      const dt = new Date(startTime);
+      if (Number.isNaN(dt.getTime())) return false;
+      const localHour = dt.getHours();
+      const kstHour = new Date(dt.getTime() + 9 * 60 * 60 * 1000).getHours();
+      return localHour <= 12 || kstHour <= 12;
+    };
+
+    console.info(
+      `[GamesController] popular-with-pick start date=${popular.date} total=${popular.games.length} isFuture=${isFuture}`,
     );
 
     const enriched = await Promise.all<PopularGameWithPick>(
       popular.games.map(async (g, idx) => {
         const step = `${idx + 1}/${popular.games.length}`;
-        console.log(
-          `[GamesController] popular-with-pick 분석 중 ${step} gameId=${g.gameId}`,
+        console.info(
+          `[GamesController] popular-with-pick progress=${step} gameId=${g.gameId} start=${g.startTime}`,
         );
+
+        // 미래 날짜라도 정오 이전 킥오프는 미리 분석(스케줄러 선분석과 동일 대상)
+        if (isFuture && !isBeforeNoonKst(g.startTime)) {
+          return {
+            ...g,
+            primaryPick: null,
+            hitStatus: 'neutral',
+          } as PopularGameWithPick;
+        }
+
         try {
           const analysis = (await this.analysisService.getOrCreateAnalysis(
             g.gameId,
@@ -65,7 +81,8 @@ export class GamesController {
               handicap: true,
             },
             false,
-            undefined,
+            (g as { sportsType?: string }).sportsType ??
+              (g as { sport?: string }).sport,
             {
               scoreHome: g.score?.home ?? undefined,
               scoreAway: g.score?.away ?? undefined,
@@ -74,8 +91,8 @@ export class GamesController {
             },
           )) as AnalysisResponse;
 
-          console.log(
-            `[GamesController] popular-with-pick 분석 완료 ${step} gameId=${g.gameId}`,
+          console.info(
+            `[GamesController] popular-with-pick done gameId=${g.gameId} hitStatus=${(analysis as { hitStatus?: string })?.hitStatus ?? 'neutral'}`,
           );
 
           return {
@@ -99,10 +116,38 @@ export class GamesController {
       }),
     );
 
+    if (isFuture) {
+      // 미래 날짜: 분석 여부와 무관하게 전체 리스트 반환
+      return {
+        date: popular.date,
+        games: enriched,
+      };
+    }
+
+    // 오늘 경기: 분석 실패한 항목(primaryPick null)은 제외
     return {
       date: popular.date,
       games: enriched.filter((g) => g.primaryPick !== null),
     };
+  }
+
+  /**
+   * 날짜 파라미터가 없으면 오늘(KST), 오늘보다 미래면 isFuture=true
+   */
+  private resolveDate(date?: string): {
+    requestedDate: string;
+    isFuture: boolean;
+  } {
+    const now = new Date();
+    const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    const todayStr = kst.toISOString().slice(0, 10);
+
+    const reqStr = date && date.trim().length > 0 ? date : todayStr;
+    const req = new Date(reqStr);
+    const isFuture =
+      !Number.isNaN(req.getTime()) && req.toISOString().slice(0, 10) > todayStr;
+
+    return { requestedDate: reqStr, isFuture };
   }
 
   @Get(':gameId')
