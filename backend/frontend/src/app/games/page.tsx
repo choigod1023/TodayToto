@@ -38,15 +38,21 @@ const formatStatus = (status?: string) => {
 };
 
 async function fetchPopularGames(
-  tomorrow: boolean,
+  day: 'yesterday' | 'today' | 'tomorrow',
 ): Promise<PopularGamesResponse> {
   // 한국 시간(KST, UTC+9) 기준으로 현재 날짜 계산
   const now = new Date();
   const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로 변환
   const kstDate = new Date(now.getTime() + kstOffset);
-  const targetDate = new Date(
-    kstDate.getTime() + (tomorrow ? 24 * 60 * 60 * 1000 : 0),
-  );
+
+  let dayOffset = 0;
+  if (day === 'yesterday') {
+    dayOffset = -24 * 60 * 60 * 1000;
+  } else if (day === 'tomorrow') {
+    dayOffset = 24 * 60 * 60 * 1000;
+  }
+
+  const targetDate = new Date(kstDate.getTime() + dayOffset);
   const requestDate = targetDate.toISOString().slice(0, 10);
 
   return getJson<PopularGamesResponse>('games/popular-with-pick', {
@@ -60,8 +66,14 @@ export default async function GamesPage({
   searchParams?: Promise<{ day?: string }>;
 }) {
   const params = await searchParams;
-  const isTomorrow = params?.day === 'tomorrow';
-  const { date, games } = await fetchPopularGames(isTomorrow);
+  const dayParam = params?.day;
+  const day =
+    dayParam === 'yesterday'
+      ? 'yesterday'
+      : dayParam === 'tomorrow'
+        ? 'tomorrow'
+        : 'today';
+  const { date, games } = await fetchPopularGames(day);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
@@ -71,15 +83,26 @@ export default async function GamesPage({
             <h1 className="text-xl font-semibold">주요 경기 목록</h1>
             <p className="text-xs text-slate-400">
               날짜 기준: <span className="font-mono">{date}</span>
-              {isTomorrow && <span className="ml-1">(내일 경기)</span>}
+              {day === 'yesterday' && <span className="ml-1">(어제 경기)</span>}
+              {day === 'tomorrow' && <span className="ml-1">(내일 경기)</span>}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex rounded-lg border border-slate-700 bg-slate-900 text-xs">
               <Link
-                href="/games"
+                href="/games?day=yesterday"
                 className={`px-3 py-1.5 ${
-                  !isTomorrow
+                  day === 'yesterday'
+                    ? 'bg-sky-600 text-white'
+                    : 'text-slate-300 hover:bg-slate-800'
+                }`}
+              >
+                어제
+              </Link>
+              <Link
+                href="/games"
+                className={`px-3 py-1.5 border-l border-slate-700 ${
+                  day === 'today'
                     ? 'bg-sky-600 text-white'
                     : 'text-slate-300 hover:bg-slate-800'
                 }`}
@@ -89,7 +112,7 @@ export default async function GamesPage({
               <Link
                 href="/games?day=tomorrow"
                 className={`px-3 py-1.5 border-l border-slate-700 ${
-                  isTomorrow
+                  day === 'tomorrow'
                     ? 'bg-sky-600 text-white'
                     : 'text-slate-300 hover:bg-slate-800'
                 }`}
@@ -138,54 +161,92 @@ export default async function GamesPage({
                         ...(game.result ? { result: game.result } : {}),
                       },
                     }}
-                    className={`block rounded-xl border p-4 transition hover:border-sky-500 hover:bg-slate-900 ${hitClass}`}
+                    className={`flex min-h-[180px] flex-col rounded-xl border p-4 transition hover:border-sky-500 hover:bg-slate-900 ${hitClass}`}
                   >
-                    <p className="text-xs text-slate-400">
-                      {game.sport} · {game.leagueName}
-                    </p>
-                    <p className="mt-1 text-sm font-medium">
-                      {game.homeTeamName} vs {game.awayTeamName}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      시작 시간:{' '}
-                      <span className="font-mono">{game.startTime}</span>
-                    </p>
-                    {game.score &&
-                      game.score.home != null &&
-                      game.score.away != null && (
-                        <p className="mt-1 text-xs text-slate-300">
-                          스코어: {game.score.home} - {game.score.away}{' '}
-                          {game.gameStatus && (
-                            <span className="text-[10px] text-slate-400">
-                              ({formatStatus(game.gameStatus)})
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-400">
+                        {game.sport} · {game.leagueName}
+                      </p>
+                      <p className="mt-1 text-sm font-medium">
+                        {game.homeTeamName} vs {game.awayTeamName}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        시작 시간:{' '}
+                        <span className="font-mono">{game.startTime}</span>
+                      </p>
+                      {game.score &&
+                        game.score.home != null &&
+                        game.score.away != null && (
+                          <p className="mt-1 text-xs text-slate-300">
+                            스코어: {game.score.home} - {game.score.away}{' '}
+                            {game.gameStatus && (
+                              <span className="text-[10px] text-slate-400">
+                                ({formatStatus(game.gameStatus)})
+                              </span>
+                            )}
+                          </p>
+                        )}
+                    </div>
+                    <div className="mt-auto">
+                      {game.primaryPick ? (
+                        <div>
+                          <div className="flex items-start gap-2 text-[11px] text-sky-100">
+                            <span className="rounded-lg bg-sky-900/70 px-2 py-1 whitespace-nowrap">
+                              추천 픽
                             </span>
+                            <div className="flex-1">
+                              <p>
+                                {game.primaryPick.market} /{' '}
+                                {game.primaryPick.side}{' '}
+                                {typeof game.primaryPick.probability ===
+                                'number'
+                                  ? `(${Math.round(
+                                      (game.primaryPick.probability ?? 0) * 100,
+                                    )}%)`
+                                  : ''}
+                              </p>
+                              {game.hitStatus &&
+                              game.hitStatus !== 'neutral' ? (
+                                <p
+                                  className={`mt-0.5 text-[10px] ${
+                                    game.hitStatus === 'hit'
+                                      ? 'text-emerald-300'
+                                      : 'text-rose-300'
+                                  }`}
+                                >
+                                  {game.hitStatus === 'hit' ? '적중' : '미적중'}
+                                </p>
+                              ) : (
+                                <p className="mt-0.5 text-[10px] text-slate-500">
+                                  {' '}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-[11px] text-slate-500">
+                            추천 픽 없음
+                          </p>
+                          {game.hitStatus && game.hitStatus !== 'neutral' ? (
+                            <p
+                              className={`mt-0.5 text-[10px] ${
+                                game.hitStatus === 'hit'
+                                  ? 'text-emerald-300'
+                                  : 'text-rose-300'
+                              }`}
+                            >
+                              {game.hitStatus === 'hit' ? '적중' : '미적중'}
+                            </p>
+                          ) : (
+                            <p className="mt-0.5 text-[10px] text-slate-500">
+                              {' '}
+                            </p>
                           )}
-                        </p>
+                        </div>
                       )}
-                    {game.primaryPick && (
-                      <p className="mt-2 text-[11px] text-sky-100">
-                        <span className="rounded-lg bg-sky-900/70 px-2 py-1">
-                          추천 픽
-                        </span>{' '}
-                        {game.primaryPick.market} / {game.primaryPick.side}{' '}
-                        {typeof game.primaryPick.probability === 'number'
-                          ? `(${Math.round(
-                              (game.primaryPick.probability ?? 0) * 100,
-                            )}%)`
-                          : ''}
-                      </p>
-                    )}
-                    {game.hitStatus && game.hitStatus !== 'neutral' && (
-                      <p
-                        className={`mt-1 text-[10px] ${
-                          game.hitStatus === 'hit'
-                            ? 'text-emerald-300'
-                            : 'text-rose-300'
-                        }`}
-                      >
-                        {game.hitStatus === 'hit' ? '적중' : '미적중'}
-                      </p>
-                    )}
+                    </div>
                   </Link>
                 </li>
               );

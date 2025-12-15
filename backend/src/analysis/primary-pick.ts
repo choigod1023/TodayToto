@@ -163,6 +163,14 @@ export function ensurePrimaryPick(
 
     if (!side) return;
 
+    // 무승부 확률이 0.3 이상이면 DRAW를 후보에서 제외
+    // 무승부 확률이 높은 경기는 언더오버나 핸디캡이 더 유리하므로
+    if (marketEnum === 'FULL_TIME_1X2' && side === 'DRAW') {
+      if (prob >= 0.3) {
+        return;
+      }
+    }
+
     const odds = getOddsForMarket(marketEnum, side);
     if (marketEnum === 'FULL_TIME_1X2' && typeof odds === 'number') {
       // 배당이 너무 낮으면(예: 1.4 미만) 아예 후보에서 제외
@@ -232,6 +240,3 @@ export function ensurePrimaryPick(
 
   return result;
 }
-
-
-
