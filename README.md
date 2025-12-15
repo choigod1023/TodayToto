@@ -39,7 +39,7 @@
   - `components/games/*`: UI 컴포넌트 모듈화
   - `lib/*`: 적중/상태 유틸(`gameHitUtils`), 플레이어 스탯 유틸(`playerStats`), API 호출 유틸(`gameApi`)
 
-## 4. 실행 방법
+## 4. 실행 방법 (로컬)
 
 ```bash
 # 백엔드
@@ -54,6 +54,45 @@ npm run dev
 ```
 
 기본 포트: 백엔드 3001, 프론트 3000 (Next dev).
+
+### 4-1. Docker 실행 (백엔드)
+```bash
+cd backend
+docker build -t sportstoto-backend .
+docker run -d -p 3001:3001 --env-file .env sportstoto-backend
+```
+
+### 4-2. Docker Compose (예시)
+`backend/docker-compose.yml`
+```yaml
+version: "3.9"
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+```
+실행:
+```bash
+cd backend
+docker compose up -d --build
+```
+
+### 4-3. CI/CD (GitHub Actions → SSH 배포 예시)
+- 리포: `.github/workflows/deploy-backend.yml`
+- main 푸시 시:
+  1) CI: `cd backend && npm ci && npm run build`
+  2) CD: SSH로 서버 접속 후 `git reset --hard origin/main && docker compose up -d --build`
+
+필요 Secrets:
+- `SSH_HOST` (서버 IP/도메인)
+- `SSH_USER` (예: ubuntu)
+- `SSH_KEY` (SSH 개인키 본문)
+- `SSH_PORT` (선택, 기본 22 아님면 설정)
 
 ## 5. 환경 변수
 
