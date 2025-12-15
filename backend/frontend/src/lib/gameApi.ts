@@ -64,8 +64,10 @@ export async function fetchAnalysis<T = unknown>(
         },
         { refresh: false },
       );
-      // @ts-expect-error runtime check
-      if (result && (result as any).result?.primaryPick) {
+      if (
+        result &&
+        (result as { result?: { primaryPick?: unknown } }).result?.primaryPick
+      ) {
         return result;
       }
       if (attempt < maxRetries) {
@@ -108,4 +110,3 @@ export async function fetchAnalysis<T = unknown>(
 
   throw new Error('Gemini 분석을 가져오는 데 실패했습니다.');
 }
-
