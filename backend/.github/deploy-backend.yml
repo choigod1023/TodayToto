@@ -1,0 +1,35 @@
+mkdir -p .github/workflows
+cat > .github/workflows/deploy-backend.yml <<'EOF'
+name: deploy-backend
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # CI: 빌드 검증
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: cd backend && npm ci && npm run build
+
+      # CD: SSH로 서버 접속 후 pull 및 docker compose 재기동
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd /opt/sportstoto/TodayToto
+            git fetch origin main
+            git reset --hard origin/main
+            cd backend
+            docker compose down || true
+            docker compose up -d --build
+EOF
