@@ -56,15 +56,21 @@ function RecentList({
           const homeScore =
             m.home?.score ??
             (m.homeScore as number | undefined) ??
-            (m as any).home_score ??
+            (m as { home_score?: number }).home_score ??
             m.score?.home ??
-            sumPeriods((m.home as any)?.periodData);
+            sumPeriods(
+              (m.home as { periodData?: { score?: number }[] } | undefined)
+                ?.periodData,
+            );
           const awayScore =
             m.away?.score ??
             (m.awayScore as number | undefined) ??
-            (m as any).away_score ??
+            (m as { away_score?: number }).away_score ??
             m.score?.away ??
-            sumPeriods((m.away as any)?.periodData);
+            sumPeriods(
+              (m.away as { periodData?: { score?: number }[] } | undefined)
+                ?.periodData,
+            );
 
           const scoreText =
             homeScore != null && awayScore != null

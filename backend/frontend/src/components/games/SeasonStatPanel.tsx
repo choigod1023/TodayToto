@@ -1,36 +1,28 @@
+type TeamSeasonStat = {
+  name?: string;
+  winPercentage?: string;
+  pointsAverage?: string;
+  fieldGoalsPercentage?: string;
+  threePointFieldGoalsPercentage?: string;
+  freeThrowsPercentage?: string;
+  assistsAverage?: string;
+  reboundsTotalAverage?: string;
+  stealsAverage?: string;
+  blockedShotsAverage?: string;
+  turnoversAverage?: string;
+};
+
+export type SeasonStatData =
+  | {
+      home?: TeamSeasonStat;
+      away?: TeamSeasonStat;
+    }
+  | undefined;
+
 export function SeasonStatPanel({
   seasonStat,
 }: {
-  seasonStat?:
-    | {
-        home?: {
-          name?: string;
-          winPercentage?: string;
-          pointsAverage?: string;
-          fieldGoalsPercentage?: string;
-          threePointFieldGoalsPercentage?: string;
-          freeThrowsPercentage?: string;
-          assistsAverage?: string;
-          reboundsTotalAverage?: string;
-          stealsAverage?: string;
-          blockedShotsAverage?: string;
-          turnoversAverage?: string;
-        };
-        away?: {
-          name?: string;
-          winPercentage?: string;
-          pointsAverage?: string;
-          fieldGoalsPercentage?: string;
-          threePointFieldGoalsPercentage?: string;
-          freeThrowsPercentage?: string;
-          assistsAverage?: string;
-          reboundsTotalAverage?: string;
-          stealsAverage?: string;
-          blockedShotsAverage?: string;
-          turnoversAverage?: string;
-        };
-      }
-    | undefined;
+  seasonStat?: SeasonStatData;
 }) {
   if (!seasonStat || (!seasonStat.home && !seasonStat.away)) {
     return (
@@ -39,7 +31,7 @@ export function SeasonStatPanel({
   }
 
   const fields: Array<{
-    key: keyof NonNullable<typeof seasonStat>['home'];
+    key: keyof TeamSeasonStat;
     label: string;
   }> = [
     { key: 'winPercentage', label: '승률' },
@@ -75,12 +67,8 @@ export function SeasonStatPanel({
                 className="border-t border-slate-800/80 text-slate-200"
               >
                 <td className="px-2 py-1 text-slate-300">{f.label}</td>
-                <td className="px-2 py-1">
-                  {(seasonStat.home as any)?.[f.key] ?? '-'}
-                </td>
-                <td className="px-2 py-1">
-                  {(seasonStat.away as any)?.[f.key] ?? '-'}
-                </td>
+                <td className="px-2 py-1">{seasonStat.home?.[f.key] ?? '-'}</td>
+                <td className="px-2 py-1">{seasonStat.away?.[f.key] ?? '-'}</td>
               </tr>
             ))}
           </tbody>
@@ -89,4 +77,3 @@ export function SeasonStatPanel({
     </div>
   );
 }
-

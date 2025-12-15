@@ -1,4 +1,4 @@
-interface RankItem {
+export interface RankItem {
   rankings?: Array<{
     teamName?: string;
     ranking?: number;
@@ -11,9 +11,7 @@ interface RankItem {
 export function RankPanel({ rank }: { rank?: RankItem[] }) {
   if (!Array.isArray(rank) || rank.length === 0) {
     return (
-      <p className="text-[11px] text-slate-500">
-        순위 데이터가 없습니다.
-      </p>
+      <p className="text-[11px] text-slate-500">순위 데이터가 없습니다.</p>
     );
   }
 
@@ -65,4 +63,3 @@ export function RankPanel({ rank }: { rank?: RankItem[] }) {
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-type PlayerSeasonStatRaw = {
+export type PlayerSeasonStatRaw = {
   player?: {
     displayName?: string;
     firstName?: string;
@@ -74,13 +74,14 @@ export function PlayerSeasonStatPanel({
 
   if (!homePlayers.length && !awayPlayers.length) {
     return (
-      <p className="text-[11px] text-slate-500">
-        선수 시즌 스탯이 없습니다.
-      </p>
+      <p className="text-[11px] text-slate-500">선수 시즌 스탯이 없습니다.</p>
     );
   }
 
-  const renderList = (title: string, list: ReturnType<typeof pickTopPlayers>) => (
+  const renderList = (
+    title: string,
+    list: ReturnType<typeof pickTopPlayers>,
+  ) => (
     <div>
       <p className="mb-1 text-[11px] font-semibold text-slate-200">{title}</p>
       <ul className="space-y-1 text-[11px] text-slate-100">
@@ -113,4 +114,3 @@ export function PlayerSeasonStatPanel({
     </div>
   );
 }
-
