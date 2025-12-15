@@ -1,6 +1,5 @@
-mkdir -p .github/workflows
-cat > .github/workflows/deploy-backend.yml <<'EOF'
 name: deploy-backend
+
 on:
   push:
     branches: [main]
@@ -15,7 +14,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - run: cd backend && npm ci && npm run build
+      - name: Build backend
+        run: cd backend && npm ci && npm run build
 
       # CD: SSH로 서버 접속 후 pull 및 docker compose 재기동
       - name: Deploy via SSH
@@ -32,4 +32,3 @@ jobs:
             cd backend
             docker compose down || true
             docker compose up -d --build
-EOF
