@@ -53,7 +53,10 @@ export class PopularGameDto {
 }
 
 export class PopularGamesResponseDto {
-  @ApiProperty({ example: '2025-03-15', description: '화면에 노출할 기준 날짜(KST)' })
+  @ApiProperty({
+    example: '2025-03-15',
+    description: '화면에 노출할 기준 날짜(KST)',
+  })
   date: string;
 
   @ApiProperty({ type: [PopularGameDto] })
@@ -144,7 +147,6 @@ export class GameRecordDto {
   @ApiProperty({
     type: 'object',
     additionalProperties: true,
-    required: false,
     description: '스포츠 타입별 랭킹 정보 (soccer에서만 존재)',
   })
   rank?: Record<string, unknown>;
@@ -152,7 +154,6 @@ export class GameRecordDto {
   @ApiProperty({
     type: 'object',
     additionalProperties: true,
-    required: false,
     description: '시즌 팀 스탯 (basketball에서만 존재)',
   })
   seasonStat?: Record<string, unknown>;
@@ -160,7 +161,6 @@ export class GameRecordDto {
   @ApiProperty({
     type: 'object',
     additionalProperties: true,
-    required: false,
     description: '시즌 선수 스탯 (basketball에서만 존재)',
   })
   playerSeasonStat?: Record<string, unknown>;
@@ -281,4 +281,3 @@ export class AnalysisResponseDto {
   @ApiProperty({ example: '2025-03-15T09:00:00.000Z', required: false })
   updatedAt?: string;
 }
-
