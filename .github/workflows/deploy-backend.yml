@@ -27,7 +27,7 @@ jobs:
           port: ${{ secrets.SSH_PORT || 22 }}
           command_timeout: 30m
           script: |
-            cd /opt/sportstoto/TodayToto
+            cd /home/ec2-user/sportstoto/backend
             git fetch origin main
             git reset --hard origin/main
             cd backend
