@@ -17,7 +17,7 @@ jobs:
       - name: Build backend
         run: cd backend && npm ci && npm run build
 
-      # CD: SSH로 서버 접속 후 pull 및 docker compose 재기동
+      # CD: SSH로 서버 접속 후 pull 및 docker-compose 재기동
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -54,8 +54,8 @@ jobs:
             echo "Current directory: $(pwd)"
             docker compose down || true
             echo "Building Docker image..."
-            docker compose build --progress=plain || { echo "Docker build failed!"; exit 1; }
+            docker-compose build --progress=plain || { echo "Docker build failed!"; exit 1; }
             echo "Starting containers..."
-            docker compose up -d || { echo "Docker compose up failed!"; exit 1; }
+            docker-compose up -d || { echo "docker-compose up failed!"; exit 1; }
             echo "Deployment completed!"
-            docker compose ps
+            docker-compose ps
