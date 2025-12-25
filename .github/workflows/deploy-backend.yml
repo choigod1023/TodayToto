@@ -30,8 +30,8 @@ jobs:
           script: |
             set -e
             echo "=== SSH Connection Test ==="
-            whoami
-            pwd
+            echo "Current user: $(whoami)"
+            echo "Current directory: $(pwd)"
             echo "=== Checking directory ==="
             if [ -d "/home/ec2-user/sportstoto" ]; then
               echo "Found /home/ec2-user/sportstoto"
