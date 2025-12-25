@@ -33,16 +33,16 @@ jobs:
             echo "Current user: $(whoami)"
             echo "Current directory: $(pwd)"
             echo "=== Checking directory ==="
-            if [ -d "/home/ec2-user/sportstoto" ]; then
-              echo "Found /home/ec2-user/sportstoto"
-              cd /home/ec2-user/sportstoto
-            elif [ -d "/opt/sportstoto/TodayToto" ]; then
+            if [ -d "/opt/sportstoto/TodayToto" ]; then
               echo "Found /opt/sportstoto/TodayToto"
               cd /opt/sportstoto/TodayToto
+            elif [ -d "/home/ec2-user/sportstoto" ]; then
+              echo "Found /home/ec2-user/sportstoto"
+              cd /home/ec2-user/sportstoto
             else
               echo "ERROR: Project directory not found!"
-              ls -la /home/ec2-user/ || true
               ls -la /opt/sportstoto/ || true
+              ls -la /home/ec2-user/ || true
               exit 1
             fi
             echo "Current directory: $(pwd)"
