@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import Link from 'next/link';
 import { GameHeader } from '@/components/games/GameHeader';
 import { RawVsRecordItem } from '@/components/games/HeadToHeadPanel';
@@ -8,7 +7,6 @@ import { GameAnalysisSection } from '@/components/games/GameAnalysisSection';
 import { computeHitStatus, formatStatus } from '@/lib/gameHitUtils';
 import { pickTopPlayers, PlayerSeasonStatRaw } from '@/lib/playerStats';
 import { fetchAnalysis, fetchGameDetail } from '@/lib/gameApi';
-import GameDetailLoading from './loading';
 
 interface CommunityPost {
   post_id: number;
@@ -75,20 +73,21 @@ interface AnalysisResult {
   hitStatus?: 'hit' | 'miss' | 'neutral';
 }
 
-async function GameDetailContent({
-  gameId,
+export default async function GameDetailPage({
+  params,
   searchParams,
 }: {
-  gameId: string;
-  searchParams?: {
+  params: Promise<{ gameId: string }>;
+  searchParams?: Promise<{
     sportsType?: string;
     scoreHome?: string;
     scoreAway?: string;
     gameStatus?: string;
     result?: string;
-  };
+  }>;
 }) {
-  const sp = searchParams;
+  const { gameId } = await params;
+  const sp = await searchParams;
   const sportsType = sp?.sportsType;
 
   const game = await fetchGameDetail<GameDetail>(gameId, {
@@ -205,92 +204,64 @@ async function GameDetailContent({
     gameStatus === 'FINAL' && analysis.result.handicap ? primaryHit : 'neutral';
 
   return (
-    <>
-      <header className="flex items-center justify-between border-b border-slate-800 pb-4">
-        <div>
-          <GameHeader
-            leagueName={game.basic.leagueName}
-            gameId={game.gameId}
-            homeTeamName={game.basic.homeTeamName}
-            awayTeamName={game.basic.awayTeamName}
-            startTime={game.basic.startTime}
-          />
-          {score && score.home !== null && score.away !== null && (
-            <GameScoreStatus
-              score={score}
-              statusLabel={formatStatus(gameStatus)}
-            />
-          )}
-        </div>
-        <Link
-          href="/games"
-          className="text-xs text-slate-400 underline-offset-4 hover:underline"
-        >
-          목록으로
-        </Link>
-      </header>
-
-      <section className="grid gap-6 lg:grid-cols-[2fr,1.3fr]">
-        <GameStatsSection
-          odds={game.odds}
-          headToHead={game.record.headToHead}
-          homeRecent={game.record.homeRecent}
-          awayRecent={game.record.awayRecent}
-          hasRank={hasRank}
-          hasSeasonStat={hasSeasonStat}
-          hasPlayerSeason={hasPlayerSeason}
-          rankData={rankData}
-          seasonStat={seasonStat}
-          playerSeasonStat={playerSeasonStat}
-        />
-
-        <div className="space-y-4">
-          <GameAnalysisSection
-            primary={primary ?? null}
-            fullTime1x2={analysis.result.fullTime1x2 ?? null}
-            overUnder={analysis.result.overUnder ?? null}
-            handicap={analysis.result.handicap ?? null}
-            primaryHit={primaryHit}
-            hitFullTime={hitFullTime}
-            hitOverUnder={hitOverUnder}
-            hitHandicap={hitHandicap}
-          />
-
-          <p className="mt-4 text-[10px] text-slate-500">
-            이 페이지는 서버 컴포넌트에서 백엔드 Nest API를 직접 호출해 데이터를
-            불러오고, 첫 진입 시 Gemini 분석까지 함께 수행합니다.
-          </p>
-        </div>
-      </section>
-    </>
-  );
-}
-
-export default async function GameDetailPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ gameId: string }>;
-  searchParams?: Promise<{
-    sportsType?: string;
-    scoreHome?: string;
-    scoreAway?: string;
-    gameStatus?: string;
-    result?: string;
-  }>;
-}) {
-  const { gameId } = await params;
-  const sp = await searchParams;
-
-  // searchParams 변경 시 새로운 Suspense 경계를 생성하기 위한 key
-  const suspenseKey = `${gameId}-${JSON.stringify(sp ?? {})}`;
-
-  return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
       <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-4 py-8">
-        <Suspense key={suspenseKey} fallback={<GameDetailLoading />}>
-          <GameDetailContent gameId={gameId} searchParams={sp} />
-        </Suspense>
+        <header className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div>
+            <GameHeader
+              leagueName={game.basic.leagueName}
+              gameId={game.gameId}
+              homeTeamName={game.basic.homeTeamName}
+              awayTeamName={game.basic.awayTeamName}
+              startTime={game.basic.startTime}
+            />
+            {score && score.home !== null && score.away !== null && (
+              <GameScoreStatus
+                score={score}
+                statusLabel={formatStatus(gameStatus)}
+              />
+            )}
+          </div>
+          <Link
+            href="/games"
+            className="text-xs text-slate-400 underline-offset-4 hover:underline"
+          >
+            목록으로
+          </Link>
+        </header>
+
+        <section className="grid gap-6 lg:grid-cols-[2fr,1.3fr]">
+          <GameStatsSection
+            odds={game.odds}
+            headToHead={game.record.headToHead}
+            homeRecent={game.record.homeRecent}
+            awayRecent={game.record.awayRecent}
+            hasRank={hasRank}
+            hasSeasonStat={hasSeasonStat}
+            hasPlayerSeason={hasPlayerSeason}
+            rankData={rankData}
+            seasonStat={seasonStat}
+            playerSeasonStat={playerSeasonStat}
+          />
+
+          <div className="space-y-4">
+            <GameAnalysisSection
+              primary={primary ?? null}
+              fullTime1x2={analysis.result.fullTime1x2 ?? null}
+              overUnder={analysis.result.overUnder ?? null}
+              handicap={analysis.result.handicap ?? null}
+              primaryHit={primaryHit}
+              hitFullTime={hitFullTime}
+              hitOverUnder={hitOverUnder}
+              hitHandicap={hitHandicap}
+            />
+
+            <p className="mt-4 text-[10px] text-slate-500">
+              이 페이지는 서버 컴포넌트에서 백엔드 Nest API를 직접 호출해
+              데이터를 불러오고, 첫 진입 시 Gemini 분석까지 함께 수행합니다.
+            </p>
+          </div>
+        </section>
       </main>
     </div>
   );
