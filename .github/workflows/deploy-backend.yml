@@ -26,15 +26,36 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           command_timeout: 30m
+          debug: true
           script: |
-            cd /home/ec2-user/sportstoto/backend
-            git fetch origin main
-            git reset --hard origin/main
-            cd backend
+            set -e
+            echo "=== SSH Connection Test ==="
+            whoami
+            pwd
+            echo "=== Checking directory ==="
+            if [ -d "/home/ec2-user/sportstoto" ]; then
+              echo "Found /home/ec2-user/sportstoto"
+              cd /home/ec2-user/sportstoto
+            elif [ -d "/opt/sportstoto/TodayToto" ]; then
+              echo "Found /opt/sportstoto/TodayToto"
+              cd /opt/sportstoto/TodayToto
+            else
+              echo "ERROR: Project directory not found!"
+              ls -la /home/ec2-user/ || true
+              ls -la /opt/sportstoto/ || true
+              exit 1
+            fi
+            echo "Current directory: $(pwd)"
+            echo "=== Git operations ==="
+            git fetch origin main || { echo "Git fetch failed!"; exit 1; }
+            git reset --hard origin/main || { echo "Git reset failed!"; exit 1; }
+            echo "=== Docker operations ==="
+            cd backend || { echo "backend directory not found!"; exit 1; }
+            echo "Current directory: $(pwd)"
             docker compose down || true
             echo "Building Docker image..."
-            docker compose build --progress=plain
+            docker compose build --progress=plain || { echo "Docker build failed!"; exit 1; }
             echo "Starting containers..."
-            docker compose up -d
+            docker compose up -d || { echo "Docker compose up failed!"; exit 1; }
             echo "Deployment completed!"
             docker compose ps
