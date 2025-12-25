@@ -52,7 +52,7 @@ jobs:
             echo "=== Docker operations ==="
             cd backend || { echo "backend directory not found!"; exit 1; }
             echo "Current directory: $(pwd)"
-            docker compose down || true
+            docker-compose down || true
             echo "Building Docker image..."
             docker-compose build --progress=plain || { echo "Docker build failed!"; exit 1; }
             echo "Starting containers..."
