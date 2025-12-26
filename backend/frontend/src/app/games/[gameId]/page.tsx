@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { GameHeader } from '@/components/games/GameHeader';
 import { RawVsRecordItem } from '@/components/games/HeadToHeadPanel';
-import { GameScoreStatus } from '@/components/games/GameScoreStatus';
+import { LiveScoreUpdater } from '@/components/games/LiveScoreUpdater';
 import { GameStatsSection } from '@/components/games/GameStatsSection';
 import { GameAnalysisSection } from '@/components/games/GameAnalysisSection';
-import { computeHitStatus, formatStatus } from '@/lib/gameHitUtils';
+import { computeHitStatus } from '@/lib/gameHitUtils';
 import { pickTopPlayers, PlayerSeasonStatRaw } from '@/lib/playerStats';
 import { fetchAnalysis, fetchGameDetail } from '@/lib/gameApi';
 
@@ -80,22 +80,15 @@ export default async function GameDetailPage({
   params: Promise<{ gameId: string }>;
   searchParams?: Promise<{
     sportsType?: string;
-    scoreHome?: string;
-    scoreAway?: string;
-    gameStatus?: string;
-    result?: string;
   }>;
 }) {
   const { gameId } = await params;
   const sp = await searchParams;
   const sportsType = sp?.sportsType;
 
+  // URL 파라미터 없이 API에서 직접 데이터 가져오기
   const game = await fetchGameDetail<GameDetail>(gameId, {
     sportsType,
-    scoreHome: sp?.scoreHome,
-    scoreAway: sp?.scoreAway,
-    gameStatus: sp?.gameStatus,
-    result: sp?.result,
   });
   const analysis = await fetchAnalysis<AnalysisResult>(gameId, {
     sportsType: sportsType ?? game.sportsType,
@@ -104,20 +97,9 @@ export default async function GameDetailPage({
     gameStatus: game.gameStatus,
   });
 
-  const scoreFromQuery =
-    sp &&
-    sp.scoreHome !== undefined &&
-    sp.scoreAway !== undefined &&
-    !Number.isNaN(Number(sp.scoreHome)) &&
-    !Number.isNaN(Number(sp.scoreAway))
-      ? {
-          home: Number(sp.scoreHome),
-          away: Number(sp.scoreAway),
-        }
-      : undefined;
-
-  const score = game.score ?? scoreFromQuery;
-  const gameStatus = game.gameStatus ?? sp?.gameStatus;
+  // API에서 받은 스코어와 게임 상태 사용
+  const score = game.score;
+  const gameStatus = game.gameStatus;
 
   const primary = analysis.result.primaryPick;
 
@@ -215,12 +197,12 @@ export default async function GameDetailPage({
               awayTeamName={game.basic.awayTeamName}
               startTime={game.basic.startTime}
             />
-            {score && score.home !== null && score.away !== null && (
-              <GameScoreStatus
-                score={score}
-                statusLabel={formatStatus(gameStatus)}
-              />
-            )}
+            <LiveScoreUpdater
+              gameId={gameId}
+              sportsType={sportsType ?? game.sportsType}
+              initialScore={score}
+              initialGameStatus={gameStatus}
+            />
           </div>
           <Link
             href="/games"
