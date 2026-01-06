@@ -25,26 +25,34 @@ function extractScore(
   const gameObj = game as Record<string, unknown>;
 
   // 다양한 필드명 시도
+  const homeObj = gameObj.home as
+    | { score?: number; periodData?: { score?: number }[] }
+    | undefined;
+  const awayObj = gameObj.away as
+    | { score?: number; periodData?: { score?: number }[] }
+    | undefined;
+  const scoreObj = gameObj.score as
+    | { home?: number; away?: number }
+    | undefined;
+
   const homeScore =
-    (gameObj.home?.score as number | undefined) ??
+    homeObj?.score ??
     (gameObj.homeScore as number | undefined) ??
-    (gameObj.score?.home as number | undefined) ??
+    scoreObj?.home ??
     (gameObj.home_score as number | undefined) ??
     null;
 
   const awayScore =
-    (gameObj.away?.score as number | undefined) ??
+    awayObj?.score ??
     (gameObj.awayScore as number | undefined) ??
-    (gameObj.score?.away as number | undefined) ??
+    scoreObj?.away ??
     (gameObj.away_score as number | undefined) ??
     null;
 
   // periodData에서 합산
   if (homeScore === null || awayScore === null) {
-    const homePeriods = (gameObj.home as { periodData?: { score?: number }[] } | undefined)
-      ?.periodData;
-    const awayPeriods = (gameObj.away as { periodData?: { score?: number }[] } | undefined)
-      ?.periodData;
+    const homePeriods = homeObj?.periodData;
+    const awayPeriods = awayObj?.periodData;
 
     if (Array.isArray(homePeriods) && Array.isArray(awayPeriods)) {
       const homeSum = homePeriods.reduce(
@@ -158,10 +166,7 @@ function extractImpliedProbabilities(oddsSnapshot: unknown): {
 
   if (Array.isArray(winLoseOdds)) {
     for (const item of winLoseOdds) {
-      if (
-        !item ||
-        (item.latestFlag !== true && item.availableFlag !== true)
-      ) {
+      if (!item || (item.latestFlag !== true && item.availableFlag !== true)) {
         continue;
       }
       const odds = Number(item.odds);
@@ -192,10 +197,7 @@ function extractImpliedProbabilities(oddsSnapshot: unknown): {
   if (Array.isArray(underOverOdds)) {
     const targetLine = 2.5;
     for (const item of underOverOdds) {
-      if (
-        !item ||
-        (item.latestFlag !== true && item.availableFlag !== true)
-      ) {
+      if (!item || (item.latestFlag !== true && item.availableFlag !== true)) {
         continue;
       }
       const optionValue = Number(item.optionValue);
@@ -271,4 +273,3 @@ export function extractOddsImpliedProbabilities(
   if (!oddsSnapshot) return {};
   return extractImpliedProbabilities(oddsSnapshot);
 }
-
