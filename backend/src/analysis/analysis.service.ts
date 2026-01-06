@@ -317,11 +317,11 @@ export class AnalysisService {
 
     const prompt = buildPrompt(game, markets, oddsSnapshot);
 
-    const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
-
     console.log(
       `[AnalysisService] Gemini 예측 시작 gameId=${game.gameId} sportsType=${game.sportsType ?? 'unknown'}`,
     );
+
+    const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
 
     type GeminiResponse = {
       candidates?: Array<{
